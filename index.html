@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CW Multi-Model Analyzer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace; background: #0a0e17; color: #c8d6e5; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1321; }
+  ::-webkit-scrollbar-thumb { background: #2a3a5c; border-radius: 3px; }
+  textarea:focus, select:focus, input:focus { outline: none; border-color: #00d4aa !important; box-shadow: 0 0 0 2px rgba(0,212,170,0.15); }
+  .header { background: linear-gradient(135deg, #0d1321 0%, #111b2e 100%); border-bottom: 1px solid #1a2744; padding: 20px 28px; }
+  .header h1 { font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.5px; margin: 0; }
+  .header p { font-size: 11px; color: #5a6f8a; margin-top: 4px; letter-spacing: 0.5px; }
+  .input-section { padding: 20px 28px; border-bottom: 1px solid #131d30; }
+  .controls { display: flex; gap: 20px; margin-bottom: 14px; align-items: flex-end; flex-wrap: wrap; }
+  .ctrl-label { font-size: 10px; color: #5a6f8a; letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+  .ctrl-input { background: #0d1321; border: 1px solid #1a2744; color: #00d4aa; padding: 8px 12px; width: 90px; font-size: 13px; font-family: inherit; }
+  .btn-main { background: linear-gradient(135deg, #00d4aa 0%, #00a896 100%); color: #0a0e17; border: none; padding: 10px 28px; font-weight: 700; font-size: 13px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; font-family: inherit; }
+  .btn-main:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,212,170,0.3); }
+  .btn-main:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-export { background: linear-gradient(135deg, #3a7bd5 0%, #2c5fa1 100%); color: #fff; border: none; padding: 10px 20px; font-weight: 600; font-size: 12px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.2s; font-family: inherit; }
+  .btn-export:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(58,123,213,0.3); }
+  .status-ok { font-size: 12px; color: #00d4aa; padding: 8px 16px; background: #0d1f1a; border: 1px solid #0d3320; }
+  .status-err { font-size: 11px; color: #ff6b6b; padding: 8px 16px; background: #1a0d0d; border: 1px solid #331a1a; max-width: 500px; }
+  .data-input { width: 100%; background: #0d1321; border: 1px solid #1a2744; color: #8899aa; padding: 14px; font-size: 11px; font-family: inherit; resize: vertical; transition: height 0.3s; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; background: #131d30; }
+  .stat-card { background: #0d1321; padding: 14px 20px; }
+  .stat-label { font-size: 10px; color: #5a6f8a; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .stat-row { display: flex; gap: 16px; align-items: baseline; }
+  .stat-num { font-size: 22px; font-weight: 700; color: #fff; font-family: 'Space Grotesk', sans-serif; }
+  .filters { padding: 14px 28px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #131d30; }
+  .filter-select { background: #0d1321; border: 1px solid #1a2744; color: #c8d6e5; padding: 5px 8px; font-size: 11px; font-family: inherit; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th.col-hdr { cursor: pointer; user-select: none; white-space: nowrap; transition: color 0.15s; padding: 10px 6px; text-align: center; font-size: 10px; letter-spacing: 0.3px; font-weight: 600; }
+  th.col-hdr:hover { color: #00d4aa; }
+  .tbl-row:hover { background: rgba(0,212,170,0.06) !important; }
+  .top3 { background: rgba(255,200,50,0.06) !important; border-left: 2px solid #ffc832 !important; }
+  .tag-itm { background: #0d3320; color: #00d4aa; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .tag-otm { background: #1a1520; color: #8b7aa8; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .legend { padding: 20px 28px; border-top: 1px solid #131d30; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 10px; color: #5a6f8a; }
+  .legend-title { font-weight: 700; color: #8899aa; margin-bottom: 6px; letter-spacing: 1px; text-transform: uppercase; }
+  .footer { padding: 10px 28px 20px; font-size: 10px; color: #3a4a60; text-align: center; }
+  .empty-state { padding: 60px 28px; text-align: center; }
+  .empty-icon { font-size: 40px; margin-bottom: 16px; opacity: 0.15; }
+  .empty-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; color: #3a4f6f; font-weight: 600; }
+  .empty-desc { font-size: 11px; color: #2a3a5c; margin-top: 8px; max-width: 500px; margin-left: auto; margin-right: auto; }
+  td { padding: 7px 6px; }
+  .txt-r { text-align: right; padding: 7px 8px !important; }
+  .txt-c { text-align: center; }
+  /* TABS */
+  .tab-bar { display: flex; background: #0d1321; border-bottom: 2px solid #1a2744; }
+  .tab-btn { padding: 12px 28px; font-size: 12px; font-weight: 600; font-family: inherit; color: #5a6f8a; background: transparent; border: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.2s; letter-spacing: 0.5px; }
+  .tab-btn:hover { color: #8899aa; }
+  .tab-btn.active { color: #00d4aa; border-bottom-color: #00d4aa; background: rgba(0,212,170,0.04); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  /* SIMULATOR */
+  .sim-panel { padding: 20px 28px; border-bottom: 1px solid #131d30; }
+  .sim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .sim-field label { font-size: 10px; color: #5a6f8a; letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+  .sim-field input, .sim-field select { background: #0d1321; border: 1px solid #1a2744; color: #00d4aa; padding: 8px 12px; width: 100%; font-size: 13px; font-family: inherit; }
+  .sim-info { background: #0d1520; border: 1px solid #1a2744; padding: 12px 16px; font-size: 11px; color: #6b7fa0; margin-bottom: 16px; display: flex; gap: 24px; flex-wrap: wrap; }
+  .sim-info b { color: #8899aa; }
+  .profit-high { color: #00d4aa; font-weight: 700; }
+  .profit-mid { color: #f0c040; font-weight: 600; }
+  .profit-neg { color: #ff6b6b; font-weight: 700; }
+  .bar-bg { background: #1a2233; height: 16px; position: relative; min-width: 60px; }
+  .bar-fill { height: 100%; position: absolute; top: 0; left: 0; transition: width 0.3s; }
+  .bar-fill.pos { background: linear-gradient(90deg, #0d3320, #00d4aa); }
+  .bar-fill.neg { background: linear-gradient(90deg, #ff6b6b, #331a1a); right: 0; left: auto; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CW Multi-Model Analyzer</h1>
+  <p>Black-Scholes · Greeks · Implied Volatility · 7-Factor Composite Scoring — Standalone Windows Edition</p>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('analysis')">◈ PHÂN TÍCH & XẾP HẠNG</button>
+  <button class="tab-btn" onclick="switchTab('simulator')">⟐ MÔ PHỎNG GIÁ MỤC TIÊU</button>
+</div>
+
+<!-- TAB 1: ANALYSIS (existing) -->
+<div id="tab-analysis" class="tab-content active">
+
+<div class="input-section">
+  <div class="controls">
+    <div>
+      <label class="ctrl-label">Lãi suất phi rủi ro (%)</label>
+      <input type="number" id="riskFreeRate" class="ctrl-input" value="4.5" step="0.1">
+    </div>
+    <button class="btn-main" id="btnAnalyze" onclick="runAnalysis()">▶ PHÂN TÍCH</button>
+    <button class="btn-main" id="btnLoadAPI" onclick="loadFromAPI()" style="background:linear-gradient(135deg,#6b5ce7,#4834d4)">⟳ TẢI TỪ API</button>
+    <label class="btn-export" style="cursor:pointer;display:inline-block">
+      📂 TẢI FILE JSON
+      <input type="file" id="jsonFileInput" accept=".json" onchange="loadJSONFile(event)" style="display:none">
+    </label>
+    <button class="btn-export" id="btnExportCSV" onclick="exportCSV()" style="display:none">⬇ XUẤT CSV</button>
+    <div id="statusOk" class="status-ok" style="display:none"></div>
+    <div id="statusErr" class="status-err" style="display:none"></div>
+  </div>
+  <div id="apiConfigPanel" style="display:none;margin-bottom:12px;padding:12px 16px;background:#0d1520;border:1px solid #1a2744;font-size:11px">
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div>
+        <label class="ctrl-label">API Server URL</label>
+        <input type="text" id="apiServerUrl" value="http://localhost:8899/cw_data.json" style="background:#0d1321;border:1px solid #1a2744;color:#00d4aa;padding:6px 10px;width:320px;font-size:11px;font-family:inherit">
+      </div>
+      <div style="color:#5a6f8a;max-width:400px">
+        Chạy <code style="color:#00d4aa">python fetch_cw_data.py --server</code> trên máy tính để khởi động server dữ liệu.
+        Hoặc tải file <code style="color:#00d4aa">cw_data.json</code> trực tiếp.
+      </div>
+      <button onclick="document.getElementById('apiConfigPanel').style.display='none'" style="background:none;border:1px solid #1a2744;color:#5a6f8a;padding:4px 8px;cursor:pointer;font-family:inherit;font-size:10px">Ẩn</button>
+    </div>
+  </div>
+  <textarea id="dataInput" class="data-input" rows="10" placeholder="Có 3 cách nhập dữ liệu:
+
+1. PASTE: Copy dữ liệu từ FiinProX Excel → paste vào đây → nhấn PHÂN TÍCH
+2. API: Nhấn TẢI TỪ API (cần chạy fetch_cw_data.py --server trước)  
+3. FILE: Nhấn TẢI FILE JSON → chọn file cw_data.json
+
+Hệ thống tự động nhận diện format dữ liệu."></textarea>
+</div>
+
+<div id="statsContainer" style="display:none"></div>
+
+<div id="filtersContainer" class="filters" style="display:none">
+  <div>
+    <label class="ctrl-label" style="display:inline; margin-right:6px">NHÓM KỲ HẠN</label>
+    <select id="filterGroup" class="filter-select" onchange="renderTable()">
+      <option value="all">Tất cả</option>
+    </select>
+  </div>
+  <div>
+    <label class="ctrl-label" style="display:inline; margin-right:6px">TSCS</label>
+    <select id="filterTSCS" class="filter-select" onchange="renderTable()">
+      <option value="all">Tất cả</option>
+    </select>
+  </div>
+  <div>
+    <label class="ctrl-label" style="display:inline; margin-right:6px">HIỂN THỊ</label>
+    <select id="filterTop" class="filter-select" onchange="renderTable()">
+      <option value="5">Top 5</option>
+      <option value="10" selected>Top 10</option>
+      <option value="20">Top 20</option>
+      <option value="0">Tất cả</option>
+    </select>
+  </div>
+  <div style="position:relative">
+    <button id="colPickerBtn" onclick="toggleColPicker()" style="background:#111b2e;border:1px solid #1a2744;color:#8899aa;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit">⚙ Cột hiển thị</button>
+    <div id="colPickerPanel" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:#0d1321;border:1px solid #1a2744;padding:8px 12px;min-width:200px;max-height:320px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+  </div>
+  <div style="font-size:10px; color:#5a6f8a; margin-left:auto">Click header cột để sắp xếp</div>
+</div>
+
+<div id="tableContainer" style="overflow-x:auto"></div>
+
+<div id="legendContainer" style="display:none">
+  <div class="legend">
+    <div>
+      <div class="legend-title">Trọng số Composite Score</div>
+      <div>IV 20% · Premium Std 15% · Moneyness 15% · Theta 15% · Mispricing 15% · Eff.Gearing 10% · Breakeven 10%</div>
+      <div style="margin-top:6px">Score thấp = tốt hơn · <span style="color:#ffc832">■</span> Top 3 · <span style="color:#00d4aa">■</span> Tín hiệu tích cực · <span style="color:#ff6b6b">■</span> Cảnh báo</div>
+    </div>
+    <div>
+      <div class="legend-title">Chú thích</div>
+      <div><b style="color:#e0e8f0">Premium Std</b> = (Breakeven − Giá TSCS) / Giá TSCS — công thức chuẩn quốc tế</div>
+      <div><b style="color:#e0e8f0">Prem/Năm</b> = Premium Std × (365 / Ngày ĐH) — quy đổi về tỷ suất năm để so sánh khác kỳ hạn</div>
+      <div><b style="color:#e0e8f0">Prem FiinPro</b> = (GiáTB5phiên − Breakeven) / Breakeven — công thức FiinProX</div>
+      <div style="margin-top:4px">θ/ngày = chi phí time decay (VNĐ) · IV = Implied Volatility · BE% = % cần tăng để hòa vốn</div>
+    </div>
+  </div>
+  <div class="footer">⚠ Công cụ phân tích tham khảo — Không phải khuyến nghị đầu tư · Chưa tính thanh khoản, bid-ask spread</div>
+</div>
+
+<div id="emptyState" class="empty-state">
+  <div class="empty-icon">◈</div>
+  <div class="empty-title">Paste dữ liệu Excel → Nhấn PHÂN TÍCH</div>
+  <div class="empty-desc">Hệ thống sẽ tự động tính Black-Scholes fair value, Implied Volatility, Greeks (Delta, Gamma, Theta, Vega), Effective Gearing, Breakeven, và xếp hạng theo 7 tiêu chí composite scoring.</div>
+</div>
+
+</div><!-- END tab-analysis -->
+
+<!-- TAB 2: SIMULATOR -->
+<div id="tab-simulator" class="tab-content">
+
+<div class="sim-panel">
+  <div style="font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; color:#fff; margin-bottom:4px">Mô phỏng Giá mục tiêu</div>
+  <div style="font-size:11px; color:#5a6f8a; margin-bottom:16px">Tính giá CW lý thuyết & lợi nhuận kỳ vọng khi TSCS đạt giá mục tiêu. Dựa trên Black-Scholes với IV hiện tại.</div>
+  
+  <div id="simNoData" style="padding:30px; text-align:center; color:#5a6f8a; font-size:12px">
+    ⚠ Cần phân tích dữ liệu trước (Tab 1) để sử dụng chức năng mô phỏng.
+  </div>
+  
+  <div id="simControls" style="display:none">
+    <div class="sim-grid">
+      <div class="sim-field">
+        <label>Chứng khoán cơ sở</label>
+        <select id="simTSCS" onchange="onSimTSCSChange()">
+          <option value="">— Chọn TSCS —</option>
+        </select>
+      </div>
+      <div class="sim-field">
+        <label>Giá hiện tại TSCS</label>
+        <input type="text" id="simCurrentPrice" readonly style="color:#8899aa">
+      </div>
+      <div class="sim-field">
+        <label>Giá mục tiêu (VNĐ)</label>
+        <input type="number" id="simTargetPrice" placeholder="Nhập giá mục tiêu" step="100">
+      </div>
+      <div class="sim-field">
+        <label>Số ngày đạt mục tiêu</label>
+        <input type="number" id="simDays" value="30" min="1" max="365" step="1">
+      </div>
+    </div>
+    
+    <div id="simMaturityFilter" style="display:none; margin-bottom:14px">
+      <label class="ctrl-label" style="display:inline;margin-right:10px">LỌC NHÓM KỲ HẠN</label>
+      <label style="font-size:11px;color:#c8d6e5;cursor:pointer;margin-right:12px"><input type="checkbox" class="sim-maturity-cb" value="1" checked style="accent-color:#00d4aa;margin-right:3px">Ngắn hạn (≤60d)</label>
+      <label style="font-size:11px;color:#c8d6e5;cursor:pointer;margin-right:12px"><input type="checkbox" class="sim-maturity-cb" value="2" checked style="accent-color:#00d4aa;margin-right:3px">Trung hạn (61-120d)</label>
+      <label style="font-size:11px;color:#c8d6e5;cursor:pointer;margin-right:12px"><input type="checkbox" class="sim-maturity-cb" value="3" checked style="accent-color:#00d4aa;margin-right:3px">Dài hạn (121-180d)</label>
+      <label style="font-size:11px;color:#c8d6e5;cursor:pointer;margin-right:12px"><input type="checkbox" class="sim-maturity-cb" value="4" checked style="accent-color:#00d4aa;margin-right:3px">Rất dài hạn (>180d)</label>
+    </div>
+    
+    <div style="display:flex; gap:12px; margin-bottom:16px; align-items:center; flex-wrap:wrap">
+      <button class="btn-main" onclick="runSimulation()">⟐ MÔ PHỎNG</button>
+      <div id="simQuickBtns" style="display:none; gap:8px; flex-wrap:wrap"></div>
+    </div>
+    
+    <div id="simSummary" style="display:none"></div>
+    <div id="simResultTable" style="overflow-x:auto"></div>
+    <div id="simLegend" style="display:none; padding:16px 0; font-size:10px; color:#5a6f8a">
+      <b style="color:#8899aa">Phương pháp:</b> Giá CW mô phỏng = BS(S_mục_tiêu, K, T_còn_lại, r, IV_hiện_tại) / CR. 
+      IV giữ nguyên (giả định biến động không đổi). T_còn_lại = (Ngày ĐH − Ngày đạt mục tiêu) / 365.
+      CW hết hạn trước ngày mục tiêu sẽ tính giá trị nội tại: max(0, S − K) / CR.
+      <br><span style="color:#ff8c6b">⚠ Lợi nhuận thực tế có thể khác do: thay đổi IV, thanh khoản, bid-ask spread, và biến động thị trường.</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- END tab-simulator -->
+
+<script>
+// ============ GLOBAL STATE ============
+let analysisResults = [];
+let currentSort = { key: 'rank', asc: true };
+
+// Column definitions: [key, label, defaultVisible]
+const ALL_COLS = [
+  ['rank','#',true],['maCQ','Mã CQ',true],['tscs','TSCS',true],['tcph','TCPH',true],['trangThai','ITM',true],
+  ['giaHT_CQ','Giá CQ',true],['giaHT_TSCS','Giá TSCS',true],['giaTH','Giá TH',true],
+  ['premium','Premium Std',true],['premiumAnn','Prem/Năm',true],['premium_fiinpro','Prem FiinPro',false],['iv','IV',true],
+  ['delta','Delta',true],['theta','θ/ngày',true],['vega','Vega',false],['gamma','Gamma',false],
+  ['effGearing','Eff.Gear',true],['breakevenPct','BE%',true],['moneyness','Money',true],['mispricing','Misprice',false],
+  ['thoiGianDH','Ngày',true],['compositeScore','Score',true]
+];
+let visibleCols = new Set(ALL_COLS.filter(c => c[2]).map(c => c[0]));
+
+// ============ MATH UTILITIES ============
+const SQRT2PI = Math.sqrt(2 * Math.PI);
+function normPDF(x) { return Math.exp(-0.5 * x * x) / SQRT2PI; }
+function normCDF(x) {
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const t = 1.0 / (1.0 + p * Math.abs(x));
+  const y = 1.0 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t * Math.exp(-x*x/2);
+  return 0.5 * (1.0 + sign * y);
+}
+
+function bsCall(S, K, T, r, sigma) {
+  if (T <= 0 || sigma <= 0) return Math.max(S - K, 0);
+  const d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  const d2 = d1 - sigma*Math.sqrt(T);
+  return S*normCDF(d1) - K*Math.exp(-r*T)*normCDF(d2);
+}
+
+function bsDelta(S, K, T, r, sigma) {
+  if (T <= 0 || sigma <= 0) return S > K ? 1 : 0;
+  const d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  return normCDF(d1);
+}
+
+function bsGamma(S, K, T, r, sigma) {
+  if (T <= 0 || sigma <= 0) return 0;
+  const d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  return normPDF(d1) / (S * sigma * Math.sqrt(T));
+}
+
+function bsTheta(S, K, T, r, sigma) {
+  if (T <= 0 || sigma <= 0) return 0;
+  const d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  const d2 = d1 - sigma*Math.sqrt(T);
+  return (-S*normPDF(d1)*sigma/(2*Math.sqrt(T)) - r*K*Math.exp(-r*T)*normCDF(d2)) / 365;
+}
+
+function bsVega(S, K, T, r, sigma) {
+  if (T <= 0 || sigma <= 0) return 0;
+  const d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  return S * normPDF(d1) * Math.sqrt(T) / 100;
+}
+
+function impliedVol(marketPrice, S, K, T, r, cr) {
+  const target = marketPrice * cr;
+  if (target <= 0 || T <= 0) return null;
+  let lo = 0.01, hi = 5.0;
+  const fLo = bsCall(S,K,T,r,lo) - target;
+  const fHi = bsCall(S,K,T,r,hi) - target;
+  if (fLo > 0 || fHi < 0) return null;
+  for (let i = 0; i < 100; i++) {
+    const mid = (lo + hi) / 2;
+    const fMid = bsCall(S,K,T,r,mid) - target;
+    if (Math.abs(fMid) < 1e-6) return mid;
+    if (fMid < 0) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// ============ PARSER ============
+function parseNum(v) {
+  if (!v || v.trim() === '' || v.trim() === '-') return null;
+  const n = parseFloat(v.replace(/,/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function parsePct(v) {
+  if (!v || v.trim() === '' || v.trim() === '-') return null;
+  const s = v.trim();
+  if (s.endsWith('%')) {
+    const n = parseFloat(s.replace('%', '').replace(/,/g, ''));
+    return isNaN(n) ? null : n / 100;
+  }
+  const n = parseFloat(s.replace(/,/g, ''));
+  if (isNaN(n)) return null;
+  if (Math.abs(n) > 1.5) return n / 100;
+  return n;
+}
+
+function parseExcelData(text) {
+  const lines = text.trim().split('\n').map(l => l.split('\t'));
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    if (lines[i].some(c => c && c.trim() === 'Mã CQ')) headerIdx = i;
+  }
+  
+  let subHeaderIdx = headerIdx >= 0 ? headerIdx + 1 : -1;
+  if (subHeaderIdx >= 0 && lines[subHeaderIdx] && 
+      lines[subHeaderIdx].some(c => c && (c.includes('Loại chứng quyền') || c.includes('Giá phát hành')))) {
+  } else {
+    subHeaderIdx = headerIdx;
+  }
+  
+  const dataStart = (subHeaderIdx >= 0 ? subHeaderIdx : headerIdx) + 1;
+  if (dataStart <= 0 || dataStart >= lines.length) return [];
+  
+  const results = [];
+  for (let i = dataStart; i < lines.length; i++) {
+    const row = lines[i];
+    if (!row || row.length < 18 || !row[0] || row[0].trim() === '') continue;
+    
+    const maCQ = row[0]?.trim();
+    const status = row[1]?.trim();
+    const tcph = row[2]?.trim();
+    const loaiCQ = row[3]?.trim();
+    
+    if (status !== 'Đang giao dịch') continue;
+    
+    const tlcd_num = parseNum(row[4]);
+    const tlcd_den = parseNum(row[5]);
+    const giaPH = parseNum(row[6]);
+    const giaHT_CQ = parseNum(row[7]);
+    const pctChange = parsePct(row[8]);
+    const giaDC_CQ = parseNum(row[9]);
+    const pctChangeDC = parsePct(row[10]);
+    const tscs = row[11]?.trim();
+    const giaTH = parseNum(row[12]);
+    const giaTB5 = parseNum(row[13]);
+    const giaHV = parseNum(row[14]);
+    const giaHT_TSCS = parseNum(row[15]);
+    const giaDC_TSCS = parseNum(row[16]);
+    const premium_raw = parsePct(row[17]);
+    const thoiGianDH = parseNum(row[18]);
+    const ngayDau = row[19]?.trim();
+    const ngayCuoi = row[20]?.trim();
+    const trangThai = row[21]?.trim();
+    
+    if (!giaHT_CQ || !giaTH || !giaHT_TSCS || !tlcd_num || !tlcd_den || !thoiGianDH) continue;
+    if (thoiGianDH <= 0) continue;
+    
+    const tlcd = tlcd_num / tlcd_den;
+    const breakeven = giaTH + giaHT_CQ * tlcd;
+    const premium_standard = (breakeven - giaHT_TSCS) / giaHT_TSCS;
+    
+    results.push({
+      maCQ, status, tcph, loaiCQ, tlcd, giaPH, giaHT_CQ, giaDC_CQ, tscs, giaTH, giaTB5, giaHV,
+      giaHT_TSCS, giaDC_TSCS, premium: premium_standard, premium_fiinpro: premium_raw,
+      thoiGianDH, ngayDau, ngayCuoi, trangThai
+    });
+  }
+  return results;
+}
+
+// ============ ANALYSIS ENGINE ============
+function analyzeWarrants(data, riskFreeRate) {
+  const r = riskFreeRate / 100;
+  
+  const enriched = data.map(d => {
+    const S = d.giaHT_TSCS, K = d.giaTH, T = d.thoiGianDH / 365, cr = d.tlcd, price = d.giaHT_CQ;
+    const iv = impliedVol(price, S, K, T, r, cr);
+    const sigma = iv || 0.4;
+    const bsValue = bsCall(S, K, T, r, sigma) / cr;
+    const delta = bsDelta(S, K, T, r, sigma);
+    const gamma = bsGamma(S, K, T, r, sigma);
+    const theta = bsTheta(S, K, T, r, sigma) / cr;
+    const vega = bsVega(S, K, T, r, sigma) / cr;
+    const effGearing = price > 0 ? delta * (S / cr) / price : 0;
+    const moneyness = (S - K) / K;
+    const intrinsic = Math.max(0, S - K) / cr;
+    const timeValue = price - intrinsic;
+    const mispricing = bsValue > 0 ? (price - bsValue) / bsValue : 0;
+    const thetaPct = price > 0 ? Math.abs(theta) / price : 0;
+    const breakeven = K + price * cr;
+    const breakevenPct = (breakeven - S) / S;
+    const premiumAnn = d.thoiGianDH > 0 ? d.premium * (365 / d.thoiGianDH) : 0;
+    
+    let nhomKyHan;
+    if (d.thoiGianDH <= 60) nhomKyHan = '1. Ngắn hạn (≤60 ngày)';
+    else if (d.thoiGianDH <= 120) nhomKyHan = '2. Trung hạn (61-120 ngày)';
+    else if (d.thoiGianDH <= 180) nhomKyHan = '3. Dài hạn (121-180 ngày)';
+    else nhomKyHan = '4. Rất dài hạn (>180 ngày)';
+    
+    return { ...d, iv, bsValue, delta, gamma, theta, vega, effGearing, moneyness, intrinsic, timeValue, mispricing, thetaPct, breakeven, breakevenPct, premiumAnn, nhomKyHan };
+  }).filter(d => d.iv !== null);
+  
+  const groups = {};
+  enriched.forEach(d => { if (!groups[d.nhomKyHan]) groups[d.nhomKyHan] = []; groups[d.nhomKyHan].push(d); });
+  
+  const ranked = [];
+  Object.keys(groups).sort().forEach(gName => {
+    const g = groups[gName]; const n = g.length;
+    if (n < 2) { g.forEach(d => ranked.push({...d, compositeScore: 0, rank: 1})); return; }
+    
+    const rankBy = (arr, key, asc) => {
+      const sorted = [...arr].sort((a,b) => asc ? ((a[key]??Infinity)-(b[key]??Infinity)) : ((b[key]??-Infinity)-(a[key]??-Infinity)));
+      const ranks = new Map(); sorted.forEach((d, i) => ranks.set(d, (i+1)/n)); return ranks;
+    };
+    
+    const rPremium = rankBy(g, 'premium', true);
+    const rIV = rankBy(g, 'iv', true);
+    const rMoneyness = rankBy(g, 'moneyness', false);
+    const rTheta = rankBy(g, 'thetaPct', true);
+    const rBreakeven = rankBy(g, 'breakevenPct', true);
+    const rMispricing = rankBy(g, 'mispricing', true);
+    
+    const gearPen = (eg) => {
+      if (!eg || eg <= 0) return 1;
+      if (eg >= 3 && eg <= 15) return 0; if (eg > 15 && eg <= 30) return 0.3;
+      if (eg > 30) return 0.7; if (eg >= 1 && eg < 3) return 0.4; return 0.8;
+    };
+    g.forEach(d => d._gearPen = gearPen(d.effGearing));
+    const rGearing = rankBy(g, '_gearPen', true);
+    
+    g.forEach(d => {
+      d.compositeScore = 0.15*(rPremium.get(d)||1) + 0.20*(rIV.get(d)||1) + 0.15*(rMoneyness.get(d)||1) +
+        0.15*(rTheta.get(d)||1) + 0.10*(rGearing.get(d)||1) + 0.10*(rBreakeven.get(d)||1) + 0.15*(rMispricing.get(d)||1);
+    });
+    g.sort((a,b) => a.compositeScore - b.compositeScore);
+    g.forEach((d, i) => { d.rank = i + 1; ranked.push(d); });
+  });
+  return ranked;
+}
+
+// ============ FORMAT HELPERS ============
+const fmt = (v) => v == null ? '—' : v.toLocaleString('en', {maximumFractionDigits: 0});
+const fmtPct = (v) => v == null ? '—' : (v * 100).toFixed(1) + '%';
+const fmtDec = (v, d) => v == null ? '—' : v.toFixed(d);
+
+// ============ MAIN ACTIONS ============
+
+// Load data from local API server (fetch_cw_data.py --server)
+function loadFromAPI() {
+  const panel = document.getElementById('apiConfigPanel');
+  if (panel.style.display === 'none') { panel.style.display = ''; return; }
+  
+  const url = document.getElementById('apiServerUrl').value.trim();
+  if (!url) { showError('URL server not set.'); return; }
+  
+  document.getElementById('statusOk').style.display = 'none';
+  document.getElementById('statusErr').style.display = 'none';
+  document.getElementById('btnLoadAPI').textContent = '⟳ LOADING...';
+  document.getElementById('btnLoadAPI').disabled = true;
+  
+  fetch(url, { mode: 'cors' })
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(json => {
+      processAPIData(json);
+      document.getElementById('apiConfigPanel').style.display = 'none';
+    })
+    .catch(err => {
+      showError('API Error: ' + err.message + '. Check: python fetch_cw_data.py --server');
+    })
+    .finally(() => {
+      document.getElementById('btnLoadAPI').textContent = '⟳ TẢI TỪ API';
+      document.getElementById('btnLoadAPI').disabled = false;
+    });
+}
+
+// Load data from local JSON file
+function loadJSONFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const json = JSON.parse(e.target.result);
+      processAPIData(json);
+    } catch(err) {
+      showError('JSON Error: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = ''; // reset for re-select
+}
+
+// Process JSON data from API or file
+function processAPIData(json) {
+  const items = json.data || json;
+  if (!Array.isArray(items) || items.length === 0) {
+    showError('No CW data in JSON.');
+    return;
+  }
+  
+  const rate = parseFloat(document.getElementById('riskFreeRate').value) || 4.5;
+  
+  // Convert API JSON format to internal format
+  const data = items.map(d => {
+    const tlcd_num = d.tlcd_num || d.exerciseRatio || 1;
+    const tlcd_den = d.tlcd_den || d.exerciseRatioBase || 1;
+    const tlcd = tlcd_num / tlcd_den;
+    const giaHT_CQ = d.giaHT_CQ || d.lastPrice || 0;
+    const giaTH = d.giaTH || d.exercisePrice || 0;
+    const giaHT_TSCS = d.giaHT_TSCS || d.underlyingLastPrice || 0;
+    const thoiGianDH = d.thoiGianDH || d.daysToMaturity || 0;
+    
+    if (!giaHT_CQ || !giaTH || !giaHT_TSCS || !thoiGianDH || thoiGianDH <= 0) return null;
+    
+    const breakeven = giaTH + giaHT_CQ * tlcd;
+    const premium_standard = (breakeven - giaHT_TSCS) / giaHT_TSCS;
+    const premium_fp = d.premium_fiinpro || d.premium || null;
+    
+    return {
+      maCQ: d.maCQ || d.ticker || d.symbol || '',
+      status: d.status || 'Dang giao dich',
+      tcph: d.tcph || d.issuerTicker || d.issuerName || d.issuer || '',
+      loaiCQ: d.loaiCQ || d.cwType || 'Call',
+      tlcd: tlcd,
+      giaPH: d.giaPH || 0,
+      giaHT_CQ: giaHT_CQ,
+      giaDC_CQ: d.giaDC_CQ || d.referencePrice || 0,
+      tscs: d.tscs || d.underlyingTicker || d.underlyingStock || '',
+      giaTH: giaTH,
+      giaTB5: d.giaTB5 || 0,
+      giaHV: d.giaHV || d.breakEvenPrice || 0,
+      giaHT_TSCS: giaHT_TSCS,
+      giaDC_TSCS: d.giaDC_TSCS || 0,
+      premium: premium_standard,
+      premium_fiinpro: premium_fp,
+      thoiGianDH: thoiGianDH,
+      ngayDau: d.ngayDau || d.listingDate || '',
+      ngayCuoi: d.ngayCuoi || d.maturityDate || '',
+      trangThai: d.trangThai || (giaHT_TSCS > giaTH ? 'IN' : 'OUT'),
+    };
+  }).filter(d => d !== null);
+  
+  if (data.length === 0) {
+    showError('No valid CW after conversion. Check JSON format.');
+    return;
+  }
+  
+  // Show source info in textarea
+  const ts = json.timestamp ? ' (' + json.timestamp.substring(0,19) + ')' : '';
+  document.getElementById('dataInput').value = '[API Data] ' + data.length + ' CQ loaded' + ts;
+  document.getElementById('dataInput').rows = 2;
+  
+  // Run analysis directly with parsed data
+  analysisResults = analyzeWarrants(data, rate);
+  
+  document.getElementById('statusOk').textContent = '✓ ' + analysisResults.length + ' CQ (API)' + ts;
+  document.getElementById('statusOk').style.display = 'inline-block';
+  if (analysisResults.length < data.length) {
+    showError(analysisResults.length + '/' + data.length + ' CQ (' + (data.length - analysisResults.length) + ' no IV)');
+  }
+  document.getElementById('btnExportCSV').style.display = 'inline-block';
+  
+  populateFilters();
+  renderStats();
+  renderTable();
+  
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('statsContainer').style.display = '';
+  document.getElementById('filtersContainer').style.display = '';
+  document.getElementById('legendContainer').style.display = '';
+  updateSimulatorState();
+}
+
+function runAnalysis() {
+  const text = document.getElementById('dataInput').value;
+  const rate = parseFloat(document.getElementById('riskFreeRate').value) || 4.5;
+  
+  document.getElementById('statusOk').style.display = 'none';
+  document.getElementById('statusErr').style.display = 'none';
+  
+  if (!text.trim()) { showError('Chưa có dữ liệu. Hãy paste dữ liệu từ Excel.'); return; }
+  
+  document.getElementById('btnAnalyze').textContent = '⟳ ĐANG TÍNH...';
+  document.getElementById('btnAnalyze').disabled = true;
+  
+  setTimeout(() => {
+    try {
+      const data = parseExcelData(text);
+      if (data.length === 0) { showError('Không tìm thấy dữ liệu hợp lệ. Cần dòng header "Mã CQ" và ≥22 cột tab-separated.'); resetBtn(); return; }
+      
+      analysisResults = analyzeWarrants(data, rate);
+      
+      if (analysisResults.length < data.length) {
+        showError('Đã phân tích ' + analysisResults.length + '/' + data.length + ' CQ (' + (data.length - analysisResults.length) + ' CQ không tính được IV).');
+      }
+      document.getElementById('statusOk').textContent = '✓ ' + analysisResults.length + ' CQ đã phân tích';
+      document.getElementById('statusOk').style.display = 'inline-block';
+      document.getElementById('btnExportCSV').style.display = 'inline-block';
+      document.getElementById('dataInput').rows = 4;
+      
+      populateFilters();
+      renderStats();
+      renderTable();
+      
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('statsContainer').style.display = '';
+      document.getElementById('filtersContainer').style.display = '';
+      document.getElementById('legendContainer').style.display = '';
+      updateSimulatorState(); // Enable simulator with new data
+    } catch(e) {
+      showError('Lỗi: ' + e.message);
+    }
+    resetBtn();
+  }, 50);
+}
+
+function resetBtn() {
+  document.getElementById('btnAnalyze').textContent = '▶ PHÂN TÍCH';
+  document.getElementById('btnAnalyze').disabled = false;
+}
+
+function showError(msg) {
+  document.getElementById('statusErr').textContent = msg;
+  document.getElementById('statusErr').style.display = 'inline-block';
+}
+
+function populateFilters() {
+  const groups = [...new Set(analysisResults.map(d => d.nhomKyHan))].sort();
+  const tscs = [...new Set(analysisResults.map(d => d.tscs))].sort();
+  
+  const gSel = document.getElementById('filterGroup');
+  gSel.innerHTML = '<option value="all">Tất cả</option>';
+  groups.forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = g.replace(/^\d\.\s*/, ''); gSel.appendChild(o); });
+  
+  const tSel = document.getElementById('filterTSCS');
+  tSel.innerHTML = '<option value="all">Tất cả</option>';
+  tscs.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; tSel.appendChild(o); });
+  
+  renderColPicker();
+}
+
+function toggleColPicker() {
+  const p = document.getElementById('colPickerPanel');
+  p.style.display = p.style.display === 'none' ? '' : 'none';
+}
+
+function renderColPicker() {
+  const panel = document.getElementById('colPickerPanel');
+  let html = '<div style="font-size:10px;color:#5a6f8a;margin-bottom:6px;font-weight:600;letter-spacing:0.5px">CHỌN CỘT HIỂN THỊ</div>';
+  html += '<div style="display:flex;gap:8px;margin-bottom:8px">';
+  html += '<span onclick="visibleCols=new Set(ALL_COLS.map(c=>c[0]));renderColPicker();renderTable();" style="color:#00d4aa;cursor:pointer;font-size:10px">Tất cả</span>';
+  html += '<span onclick="visibleCols=new Set(ALL_COLS.filter(c=>c[2]).map(c=>c[0]));renderColPicker();renderTable();" style="color:#8899aa;cursor:pointer;font-size:10px">Mặc định</span>';
+  html += '</div>';
+  ALL_COLS.forEach(([key, label]) => {
+    if (key === 'rank' || key === 'maCQ') return; // always visible
+    const checked = visibleCols.has(key) ? 'checked' : '';
+    html += '<label style="display:block;padding:3px 0;cursor:pointer;font-size:11px;color:#c8d6e5">' +
+      '<input type="checkbox" ' + checked + ' onchange="toggleCol(\'' + key + '\')" style="margin-right:6px;accent-color:#00d4aa"> ' + label + '</label>';
+  });
+  panel.innerHTML = html;
+}
+
+function toggleCol(key) {
+  if (visibleCols.has(key)) visibleCols.delete(key);
+  else visibleCols.add(key);
+  renderTable();
+}
+
+// Close col picker when clicking outside
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('colPickerPanel');
+  const btn = document.getElementById('colPickerBtn');
+  if (panel && btn && !panel.contains(e.target) && !btn.contains(e.target)) {
+    panel.style.display = 'none';
+  }
+});
+
+function renderStats() {
+  const gs = {};
+  analysisResults.forEach(d => {
+    if (!gs[d.nhomKyHan]) gs[d.nhomKyHan] = { total: 0, itm: 0, avgIV: 0, avgPrem: 0 };
+    gs[d.nhomKyHan].total++; if (d.trangThai === 'IN') gs[d.nhomKyHan].itm++;
+    gs[d.nhomKyHan].avgIV += d.iv || 0; gs[d.nhomKyHan].avgPrem += d.premium || 0;
+  });
+  Object.values(gs).forEach(g => { g.avgIV /= g.total; g.avgPrem /= g.total; });
+  
+  let html = '<div class="stats-grid">';
+  Object.keys(gs).sort().forEach(gName => {
+    const s = gs[gName];
+    const premColor = s.avgPrem < 0.1 ? '#00d4aa' : '#ff6b6b';
+    html += '<div class="stat-card"><div class="stat-label">' + gName.replace(/^\d\.\s*/, '') + '</div>' +
+      '<div class="stat-row"><span class="stat-num">' + s.total + '</span>' +
+      '<span style="font-size:10px;color:#4a8">ITM ' + s.itm + '</span>' +
+      '<span style="font-size:10px;color:#8899aa">IV ' + fmtPct(s.avgIV) + '</span>' +
+      '<span style="font-size:10px;color:' + premColor + '">Prem ' + fmtPct(s.avgPrem) + '</span></div></div>';
+  });
+  html += '</div>';
+  document.getElementById('statsContainer').innerHTML = html;
+}
+
+function getFiltered() {
+  let f = analysisResults;
+  const group = document.getElementById('filterGroup').value;
+  const tscs = document.getElementById('filterTSCS').value;
+  const top = parseInt(document.getElementById('filterTop').value);
+  
+  if (group !== 'all') f = f.filter(d => d.nhomKyHan === group);
+  if (tscs !== 'all') f = f.filter(d => d.tscs === tscs);
+  
+  f = [...f].sort((a, b) => {
+    let va = a[currentSort.key], vb = b[currentSort.key];
+    if (typeof va === 'string' && typeof vb === 'string') return currentSort.asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return currentSort.asc ? ((va??0) - (vb??0)) : ((vb??0) - (va??0));
+  });
+  
+  if (top > 0 && group !== 'all') f = f.slice(0, top);
+  return f;
+}
+
+function sortBy(key) {
+  if (currentSort.key === key) currentSort.asc = !currentSort.asc;
+  else { currentSort.key = key; currentSort.asc = true; }
+  renderTable();
+}
+
+function renderTable() {
+  const data = getFiltered();
+  const cols = ALL_COLS.filter(([key]) => key === 'rank' || key === 'maCQ' || visibleCols.has(key));
+  
+  let html = '<table><thead><tr style="background:#111b2e;border-bottom:2px solid #1a2744">';
+  cols.forEach(([key, label]) => {
+    const color = currentSort.key === key ? '#00d4aa' : '#5a6f8a';
+    const arrow = currentSort.key === key ? (currentSort.asc ? ' ▲' : ' ▼') : '';
+    html += '<th class="col-hdr" style="color:' + color + '" onclick="sortBy(\'' + key + '\')">' + label + arrow + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  
+  if (data.length === 0) {
+    html += '<tr><td colspan="' + cols.length + '" style="text-align:center;padding:40px;color:#5a6f8a">Không có dữ liệu phù hợp bộ lọc.</td></tr>';
+  }
+  
+  data.forEach(d => {
+    const isTop3 = d.rank <= 3;
+    const rowClass = 'tbl-row' + (isTop3 ? ' top3' : '');
+    const bl = isTop3 ? '' : 'border-left:2px solid transparent;';
+    
+    // Cell renderer map
+    const cellMap = {
+      rank: '<td class="txt-c" style="font-weight:'+(isTop3?700:400)+';color:'+(isTop3?'#ffc832':'#8899aa')+'">'+d.rank+'</td>',
+      maCQ: '<td style="font-weight:600;color:#e0e8f0">'+d.maCQ+'</td>',
+      tscs: '<td class="txt-c" style="color:#00d4aa;font-weight:600">'+d.tscs+'</td>',
+      tcph: '<td style="color:#6b7fa0;font-size:10px">'+d.tcph+'</td>',
+      trangThai: '<td class="txt-c">'+(d.trangThai==='IN'?'<span class="tag-itm">ITM</span>':'<span class="tag-otm">OTM</span>')+'</td>',
+      giaHT_CQ: '<td class="txt-r">'+fmt(d.giaHT_CQ)+'</td>',
+      giaHT_TSCS: '<td class="txt-r">'+fmt(d.giaHT_TSCS)+'</td>',
+      giaTH: '<td class="txt-r">'+fmt(d.giaTH)+'</td>',
+      premium: '<td class="txt-r" style="color:'+(d.premium>0.3?'#ff6b6b':d.premium<0.05?'#00d4aa':'#8899aa')+'">'+fmtPct(d.premium)+'</td>',
+      premiumAnn: '<td class="txt-r" style="color:'+(d.premiumAnn>1?'#ff6b6b':d.premiumAnn<0.2?'#00d4aa':'#c8d6e5')+'">'+fmtPct(d.premiumAnn)+'</td>',
+      premium_fiinpro: '<td class="txt-r" style="color:'+((d.premium_fiinpro||0)<-0.2?'#00d4aa':(d.premium_fiinpro||0)>0?'#ff6b6b':'#8899aa')+'">'+fmtPct(d.premium_fiinpro)+'</td>',
+      iv: '<td class="txt-r" style="color:'+(d.iv<0.35?'#00d4aa':d.iv>0.7?'#ff6b6b':'#c8d6e5')+'">'+fmtPct(d.iv)+'</td>',
+      delta: '<td class="txt-r">'+fmtDec(d.delta,3)+'</td>',
+      theta: '<td class="txt-r" style="color:#ff8c6b">'+fmtDec(d.theta,1)+'</td>',
+      vega: '<td class="txt-r">'+fmtDec(d.vega,1)+'</td>',
+      gamma: '<td class="txt-r">'+fmtDec(d.gamma,6)+'</td>',
+      effGearing: '<td class="txt-r">'+fmtDec(d.effGearing,1)+'x</td>',
+      breakevenPct: '<td class="txt-r" style="color:'+(d.breakevenPct<0.05?'#00d4aa':'#8899aa')+'">'+fmtPct(d.breakevenPct)+'</td>',
+      moneyness: '<td class="txt-r" style="color:'+(d.moneyness>0?'#00d4aa':'#8b7aa8')+'">'+fmtPct(d.moneyness)+'</td>',
+      mispricing: '<td class="txt-r" style="color:'+(d.mispricing<-0.01?'#00d4aa':'#8899aa')+'">'+fmtPct(d.mispricing)+'</td>',
+      thoiGianDH: '<td class="txt-c" style="color:'+(d.thoiGianDH<30?'#ff6b6b':'#8899aa')+'">'+d.thoiGianDH+'</td>',
+      compositeScore: '<td class="txt-r" style="font-weight:700;color:'+(d.compositeScore<0.3?'#00d4aa':'#c8d6e5')+'">'+fmtDec(d.compositeScore,3)+'</td>',
+    };
+    
+    html += '<tr class="'+rowClass+'" style="border-bottom:1px solid #111b2e;'+bl+'">';
+    cols.forEach(([key]) => { html += cellMap[key] || '<td>—</td>'; });
+    html += '</tr>';
+  });
+  
+  html += '</tbody></table>';
+  document.getElementById('tableContainer').innerHTML = html;
+}
+
+// ============ EXPORT CSV ============
+function exportCSV() {
+  const data = getFiltered();
+  const headers = ['Rank','Mã CQ','TSCS','TCPH','ITM/OTM','Giá CQ','Giá TSCS','Giá TH',
+    'Premium Std','Prem FiinPro','IV','Delta','Theta/ngày','Vega','Eff.Gearing',
+    'Breakeven%','Moneyness','Mispricing%','Ngày ĐH','Score','Nhóm kỳ hạn'];
+  
+  let csv = '\uFEFF' + headers.join(',') + '\n'; // BOM for Vietnamese in Excel
+  data.forEach(d => {
+    csv += [d.rank, d.maCQ, d.tscs, d.tcph, d.trangThai==='IN'?'ITM':'OTM',
+      d.giaHT_CQ, d.giaHT_TSCS, d.giaTH,
+      ((d.premium||0)*100).toFixed(2)+'%', ((d.premium_fiinpro||0)*100).toFixed(2)+'%',
+      ((d.iv||0)*100).toFixed(1)+'%', (d.delta||0).toFixed(3), (d.theta||0).toFixed(1),
+      (d.vega||0).toFixed(1), (d.effGearing||0).toFixed(1),
+      ((d.breakevenPct||0)*100).toFixed(1)+'%', ((d.moneyness||0)*100).toFixed(1)+'%',
+      ((d.mispricing||0)*100).toFixed(1)+'%', d.thoiGianDH, (d.compositeScore||0).toFixed(3),
+      '"' + d.nhomKyHan + '"'
+    ].join(',') + '\n';
+  });
+  
+  const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'CW_Analysis_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ============ TAB SWITCHING ============
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if ((tab === 'analysis' && b.textContent.includes('PHÂN TÍCH')) ||
+        (tab === 'simulator' && b.textContent.includes('MÔ PHỎNG'))) b.classList.add('active');
+  });
+  if (tab === 'simulator') updateSimulatorState();
+}
+
+function updateSimulatorState() {
+  if (analysisResults.length === 0) {
+    document.getElementById('simNoData').style.display = '';
+    document.getElementById('simControls').style.display = 'none';
+    return;
+  }
+  document.getElementById('simNoData').style.display = 'none';
+  document.getElementById('simControls').style.display = '';
+  
+  const sel = document.getElementById('simTSCS');
+  const current = sel.value;
+  const tscsList = [...new Set(analysisResults.map(d => d.tscs))].sort();
+  sel.innerHTML = '<option value="">— Chọn TSCS —</option>';
+  tscsList.forEach(t => {
+    const count = analysisResults.filter(d => d.tscs === t).length;
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t + ' (' + count + ' CQ)';
+    sel.appendChild(o);
+  });
+  if (current && tscsList.includes(current)) sel.value = current;
+}
+
+function onSimTSCSChange() {
+  const tscs = document.getElementById('simTSCS').value;
+  const priceInput = document.getElementById('simCurrentPrice');
+  const targetInput = document.getElementById('simTargetPrice');
+  const quickDiv = document.getElementById('simQuickBtns');
+  
+  if (!tscs) {
+    priceInput.value = '';
+    quickDiv.style.display = 'none';
+    document.getElementById('simMaturityFilter').style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('simMaturityFilter').style.display = '';
+  const cwsForTSCS = analysisResults.filter(d => d.tscs === tscs);
+  const currentPrice = cwsForTSCS[0]?.giaHT_TSCS || 0;
+  priceInput.value = fmt(currentPrice) + ' VNĐ';
+  
+  // Suggest target prices: +5%, +10%, +15%, +20%, +30%
+  quickDiv.style.display = 'flex';
+  quickDiv.innerHTML = '<span style="font-size:10px;color:#5a6f8a;padding:6px 0">Gợi ý:</span>';
+  [5, 10, 15, 20, 30].forEach(pct => {
+    const target = Math.round(currentPrice * (1 + pct/100) / 100) * 100; // round to nearest 100
+    const btn = document.createElement('button');
+    btn.style.cssText = 'background:#111b2e; border:1px solid #1a2744; color:#8899aa; padding:5px 10px; font-size:11px; cursor:pointer; font-family:inherit; transition:all 0.15s;';
+    btn.textContent = '+' + pct + '% (' + fmt(target) + ')';
+    btn.onmouseenter = () => { btn.style.borderColor = '#00d4aa'; btn.style.color = '#00d4aa'; };
+    btn.onmouseleave = () => { btn.style.borderColor = '#1a2744'; btn.style.color = '#8899aa'; };
+    btn.onclick = () => { targetInput.value = target; runSimulation(); };
+    quickDiv.appendChild(btn);
+  });
+}
+
+// ============ SIMULATION ENGINE ============
+function runSimulation() {
+  const tscs = document.getElementById('simTSCS').value;
+  const targetPrice = parseFloat(document.getElementById('simTargetPrice').value);
+  const daysToTarget = parseInt(document.getElementById('simDays').value);
+  const r = (parseFloat(document.getElementById('riskFreeRate').value) || 4.5) / 100;
+  
+  if (!tscs) { alert('Vui lòng chọn chứng khoán cơ sở.'); return; }
+  if (!targetPrice || targetPrice <= 0) { alert('Vui lòng nhập giá mục tiêu hợp lệ.'); return; }
+  if (!daysToTarget || daysToTarget < 1) { alert('Vui lòng nhập số ngày hợp lệ (≥1).'); return; }
+  
+  const cwsForTSCS = analysisResults.filter(d => d.tscs === tscs);
+  if (cwsForTSCS.length === 0) return;
+  
+  // Filter by selected maturity groups
+  const selectedGroups = new Set();
+  document.querySelectorAll('.sim-maturity-cb').forEach(cb => {
+    if (cb.checked) selectedGroups.add(cb.value);
+  });
+  
+  const maturityGroup = (days) => {
+    if (days <= 60) return '1';
+    if (days <= 120) return '2';
+    if (days <= 180) return '3';
+    return '4';
+  };
+  
+  const filteredCWs = cwsForTSCS.filter(d => selectedGroups.has(maturityGroup(d.thoiGianDH)));
+  if (filteredCWs.length === 0) { 
+    document.getElementById('simSummary').innerHTML = '<div class="sim-info" style="color:#ff6b6b">Không có CQ phù hợp nhóm kỳ hạn đã chọn.</div>';
+    document.getElementById('simSummary').style.display = '';
+    document.getElementById('simResultTable').innerHTML = '';
+    return;
+  }
+  
+  const currentStockPrice = cwsForTSCS[0].giaHT_TSCS;
+  const stockChangePct = (targetPrice - currentStockPrice) / currentStockPrice;
+  
+  const simResults = filteredCWs.map(d => {
+    const S_new = targetPrice;
+    const K = d.giaTH;
+    const daysRemaining = d.thoiGianDH - daysToTarget;
+    const T_new = Math.max(daysRemaining, 0) / 365;
+    const cr = d.tlcd;
+    const iv = d.iv;
+    const currentCWPrice = d.giaHT_CQ;
+    
+    let newCWPrice;
+    let method;
+    
+    if (daysRemaining <= 0) {
+      // CW expired before target date → intrinsic value only
+      newCWPrice = Math.max(0, S_new - K) / cr;
+      method = 'Đáo hạn (nội tại)';
+    } else {
+      // BS reprice with new S and reduced T, keeping IV constant
+      newCWPrice = bsCall(S_new, K, T_new, r, iv) / cr;
+      method = 'Black-Scholes';
+    }
+    
+    // Calculate new Greeks at target
+    const sigma = iv;
+    const newDelta = daysRemaining > 0 ? bsDelta(S_new, K, T_new, r, sigma) : (S_new > K ? 1 : 0);
+    const newEffGearing = newCWPrice > 0 ? newDelta * (S_new / cr) / newCWPrice : 0;
+    
+    const profitVND = newCWPrice - currentCWPrice;
+    const profitPct = currentCWPrice > 0 ? profitVND / currentCWPrice : 0;
+    const intrinsicAtTarget = Math.max(0, S_new - K) / cr;
+    const timeValueAtTarget = Math.max(0, newCWPrice - intrinsicAtTarget);
+    
+    // Leverage ratio: CW profit% / Stock profit%
+    const leverageRatio = stockChangePct !== 0 ? profitPct / stockChangePct : 0;
+    
+    return {
+      ...d,
+      S_new, K, daysRemaining, T_new, newCWPrice, method,
+      newDelta, newEffGearing,
+      profitVND, profitPct, intrinsicAtTarget, timeValueAtTarget,
+      leverageRatio, stockChangePct
+    };
+  });
+  
+  // Sort by profit% descending
+  simResults.sort((a, b) => b.profitPct - a.profitPct);
+  
+  renderSimSummary(simResults, tscs, currentStockPrice, targetPrice, stockChangePct, daysToTarget);
+  renderSimTable(simResults);
+  
+  document.getElementById('simLegend').style.display = '';
+}
+
+function renderSimSummary(results, tscs, currentPrice, targetPrice, changePct, days) {
+  const profitable = results.filter(d => d.profitPct > 0).length;
+  const best = results[0];
+  const worst = results[results.length - 1];
+  const avgProfit = results.reduce((s, d) => s + d.profitPct, 0) / results.length;
+  
+  const chgColor = changePct >= 0 ? '#00d4aa' : '#ff6b6b';
+  const chgSign = changePct >= 0 ? '+' : '';
+  
+  let html = '<div class="sim-info">';
+  html += '<div><b>TSCS:</b> <span style="color:#00d4aa;font-weight:700">' + tscs + '</span></div>';
+  html += '<div><b>Giá HT:</b> ' + fmt(currentPrice) + '</div>';
+  html += '<div><b>Mục tiêu:</b> <span style="color:' + chgColor + ';font-weight:600">' + fmt(targetPrice) + ' (' + chgSign + (changePct*100).toFixed(1) + '%)</span></div>';
+  html += '<div><b>Thời gian:</b> ' + days + ' ngày</div>';
+  html += '<div><b>CW có lời:</b> <span style="color:#00d4aa">' + profitable + '/' + results.length + '</span></div>';
+  if (best) html += '<div><b>LN cao nhất:</b> <span class="profit-high">' + (best.profitPct >= 0 ? '+' : '') + (best.profitPct*100).toFixed(1) + '% (' + best.maCQ + ')</span></div>';
+  html += '<div><b>LN trung bình:</b> <span style="color:' + (avgProfit >= 0 ? '#00d4aa' : '#ff6b6b') + '">' + (avgProfit >= 0 ? '+' : '') + (avgProfit*100).toFixed(1) + '%</span></div>';
+  html += '</div>';
+  
+  document.getElementById('simSummary').innerHTML = html;
+  document.getElementById('simSummary').style.display = '';
+}
+
+function renderSimTable(results) {
+  const maxAbsProfit = Math.max(...results.map(d => Math.abs(d.profitPct)), 0.01);
+  
+  let html = '<table><thead><tr style="background:#111b2e;border-bottom:2px solid #1a2744">';
+  const cols = [
+    ['Mã CQ',100],['TCPH',90],['Kỳ hạn',70],['Giá CQ HT',75],['Giá TH',75],['Ngày ĐH',50],
+    ['Ngày còn',55],['IV',55],['Delta HT',60],
+    ['Giá CW mô phỏng',95],['Nội tại',70],['Time Value',70],
+    ['LN (VNĐ)',80],['LN (%)',70],['Biểu đồ',120],['Đòn bẩy',55],['Delta mới',60]
+  ];
+  cols.forEach(([label]) => {
+    html += '<th style="padding:10px 4px;color:#5a6f8a;font-size:10px;font-weight:600;white-space:nowrap">' + label + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  
+  results.forEach((d, i) => {
+    const profitClass = d.profitPct > 0.5 ? 'profit-high' : d.profitPct > 0 ? 'profit-mid' : 'profit-neg';
+    const barWidth = Math.min(Math.abs(d.profitPct) / maxAbsProfit * 100, 100);
+    const barClass = d.profitPct >= 0 ? 'pos' : 'neg';
+    const rowBg = i < 3 && d.profitPct > 0 ? 'background:rgba(0,212,170,0.04);border-left:2px solid #00d4aa' : 'border-left:2px solid transparent';
+    const expired = d.daysRemaining <= 0;
+    
+    html += '<tr class="tbl-row" style="border-bottom:1px solid #111b2e;' + rowBg + '">';
+    html += '<td style="font-weight:600;color:#e0e8f0">' + d.maCQ + '</td>';
+    html += '<td style="color:#6b7fa0;font-size:10px">' + d.tcph + '</td>';
+    const grpShort = d.thoiGianDH<=60?'≤60d':d.thoiGianDH<=120?'61-120d':d.thoiGianDH<=180?'121-180d':'>180d';
+    const grpColor = d.thoiGianDH<=60?'#ff8c6b':d.thoiGianDH<=120?'#f0c040':d.thoiGianDH<=180?'#8899aa':'#6ba3d6';
+    html += '<td class="txt-c" style="color:'+grpColor+';font-size:10px">'+grpShort+'</td>';
+    html += '<td class="txt-r">' + fmt(d.giaHT_CQ) + '</td>';
+    html += '<td class="txt-r">' + fmt(d.giaTH) + '</td>';
+    html += '<td class="txt-c" style="color:' + (d.thoiGianDH < 30 ? '#ff6b6b' : '#8899aa') + '">' + d.thoiGianDH + '</td>';
+    html += '<td class="txt-c" style="color:' + (expired ? '#ff6b6b' : d.daysRemaining < 10 ? '#f0c040' : '#8899aa') + '">' + (expired ? '<span style="color:#ff6b6b">HH</span>' : d.daysRemaining) + '</td>';
+    html += '<td class="txt-r" style="color:#c8d6e5">' + fmtPct(d.iv) + '</td>';
+    html += '<td class="txt-r">' + fmtDec(d.delta, 3) + '</td>';
+    html += '<td class="txt-r" style="font-weight:600;color:#fff">' + fmt(Math.round(d.newCWPrice)) + '</td>';
+    html += '<td class="txt-r" style="color:#00d4aa">' + fmt(Math.round(d.intrinsicAtTarget)) + '</td>';
+    html += '<td class="txt-r" style="color:#8899aa">' + fmt(Math.round(d.timeValueAtTarget)) + '</td>';
+    html += '<td class="txt-r" style="color:' + (d.profitVND >= 0 ? '#00d4aa' : '#ff6b6b') + '">' + (d.profitVND >= 0 ? '+' : '') + fmt(Math.round(d.profitVND)) + '</td>';
+    html += '<td class="txt-r"><span class="' + profitClass + '">' + (d.profitPct >= 0 ? '+' : '') + (d.profitPct*100).toFixed(1) + '%</span></td>';
+    html += '<td style="padding:7px 4px"><div class="bar-bg"><div class="bar-fill ' + barClass + '" style="width:' + barWidth + '%"></div></div></td>';
+    html += '<td class="txt-r" style="color:' + (d.leverageRatio > 3 ? '#00d4aa' : '#8899aa') + '">' + fmtDec(d.leverageRatio, 1) + 'x</td>';
+    html += '<td class="txt-r">' + fmtDec(d.newDelta, 3) + '</td>';
+    html += '</tr>';
+  });
+  
+  // Summary row: stock comparison
+  if (results.length > 0) {
+    const stockPct = results[0].stockChangePct;
+    html += '<tr style="border-top:2px solid #1a2744;background:#0d1520">';
+    html += '<td colspan="2" style="font-weight:700;color:#f0c040;font-size:10px">📊 So sánh: Mua CP trực tiếp</td>';
+    html += '<td></td>';
+    html += '<td class="txt-r" style="color:#f0c040">' + fmt(results[0].giaHT_TSCS) + '</td>';
+    html += '<td colspan="3"></td>';
+    html += '<td colspan="2"></td>';
+    html += '<td class="txt-r" style="font-weight:600;color:#f0c040">' + fmt(results[0].S_new) + '</td>';
+    html += '<td colspan="2"></td>';
+    html += '<td class="txt-r" style="color:#f0c040">' + (stockPct >= 0 ? '+' : '') + fmt(Math.round(results[0].S_new - results[0].giaHT_TSCS)) + '</td>';
+    html += '<td class="txt-r" style="color:#f0c040;font-weight:700">' + (stockPct >= 0 ? '+' : '') + (stockPct*100).toFixed(1) + '%</td>';
+    html += '<td style="padding:7px 4px"><div class="bar-bg"><div class="bar-fill pos" style="width:' + Math.min(Math.abs(stockPct)/Math.max(...results.map(d=>Math.abs(d.profitPct)),0.01)*100,100) + '%"></div></div></td>';
+    html += '<td class="txt-r" style="color:#f0c040">1.0x</td>';
+    html += '<td></td></tr>';
+  }
+  
+  html += '</tbody></table>';
+  document.getElementById('simResultTable').innerHTML = html;
+}
+
+// ============ KEYBOARD SHORTCUT ============
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { runAnalysis(); }
+});
+
+// ============ AUTO-LOAD DATA ON PAGE LOAD ============
+(function autoLoadData() {
+  // Try loading data/cw_data.json from same origin (works on GitHub Pages & local server)
+  const paths = ['data/cw_data.json', 'cw_data.json'];
+  
+  function tryLoad(idx) {
+    if (idx >= paths.length) return; // no auto-load available
+    fetch(paths[idx], { cache: 'no-cache' })
+      .then(r => { if (!r.ok) throw new Error('not found'); return r.json(); })
+      .then(json => {
+        if (json.data && json.data.length > 0) {
+          processAPIData(json);
+          const ts = json.timestamp ? json.timestamp.substring(0,16).replace('T',' ') : '';
+          document.getElementById('statusOk').textContent = '✓ Auto-loaded ' + json.count + ' CQ (' + (json.source||'API') + ' ' + ts + ')';
+        }
+      })
+      .catch(() => tryLoad(idx + 1));
+  }
+  
+  // Small delay to ensure DOM is ready
+  setTimeout(() => tryLoad(0), 300);
+})();
+</script>
+
+</body>
+</html>
