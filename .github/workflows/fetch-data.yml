@@ -18,8 +18,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - run: pip install requests
-
       - run: python fetch_cw_data.py --output data/cw_data.json
 
       - run: |
