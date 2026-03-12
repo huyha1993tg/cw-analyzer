@@ -14,70 +14,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install requests
+      - run: pip install requests
 
-      - name: Fetch CW data
-        run: python fetch_cw_data.py --output data/cw_data.json
+      - run: python fetch_cw_data.py --output data/cw_data.json
 
-      - name: Check data
-        run: |
-          if [ -f data/cw_data.json ]; then
-            echo "Data fetched successfully"
-            python -c "import json; d=json.load(open('data/cw_data.json')); print(f'CW count: {d[\"count\"]}, Time: {d[\"timestamp\"]}')"
-          else
-            echo "ERROR: No data file created"
-            exit 1
-          fi
-
-      - name: Commit and push
-        run: |
+      - run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/cw_data.json
-          git diff --staged --quiet || git commit -m "Update CW data $(date -u +%Y-%m-%d)"
+          git diff --staged --quiet || git commit -m "Update CW data"
           git push
-```
-
-4. Nhấn **Commit changes** → **Commit changes**
-
----
-
-## Bước 6: Bật GitHub Pages
-
-1. Vào **Settings** (tab trên cùng của repo, biểu tượng ⚙)
-2. Menu bên trái → nhấn **Pages**
-3. Phần **Source**: chọn **Deploy from a branch**
-4. Phần **Branch**: chọn `main`, folder `/ (root)`
-5. Nhấn **Save**
-6. Đợi 1-2 phút, sẽ thấy thông báo:
-   > Your site is live at `https://YOUR_USERNAME.github.io/cw-analyzer/`
-
----
-
-## Bước 7: Chạy Actions lần đầu để lấy dữ liệu
-
-1. Vào tab **Actions** (trên cùng repo)
-2. Bên trái, nhấn **Fetch CW Data**
-3. Bên phải, nhấn nút **Run workflow** → **Run workflow** (xanh lá)
-4. Đợi 1-2 phút, thấy dấu ✅ xanh = thành công
-5. Mở lại trang web → dữ liệu CW đã tự động load
-
----
-
-## Kiểm tra kết quả
-
-Sau tất cả các bước, repo sẽ có cấu trúc:
-```
-cw-analyzer/
-├── .github/workflows/fetch-data.yml   ← Tự cập nhật dữ liệu
-├── data/cw_data.json                  ← Dữ liệu CW (tự cập nhật)
-├── index.html                         ← Trang phân tích
-├── fetch_cw_data.py                   ← Script lấy dữ liệu
-├── .nojekyll                          ← Config GitHub Pages
-└── README.md                          ← Mô tả repo
